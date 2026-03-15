@@ -9,7 +9,15 @@ export async function* runChapterLoopGenerator(userChoice: string, storyId?: str
   const router = new DynamicRouter();
   
   // Use provided memory or fallback
-  let contextData: any = providedMemory || { story_context: "", characters: [], events: [], chapters: [] };
+  let contextData: any = providedMemory || { 
+    story_context: "", 
+    genre: "Sci-Fi", 
+    tone: "Dark", 
+    theme: "Survival",
+    characters: [], 
+    events: [], 
+    chapters: [] 
+  };
   
   const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL);
   
@@ -18,7 +26,7 @@ export async function* runChapterLoopGenerator(userChoice: string, storyId?: str
       // Fetch from Supabase
       const { data, error } = await supabase.from('stories').select('ai_memory_state').eq('id', storyId).single();
       if (!error && data?.ai_memory_state) {
-        contextData = data.ai_memory_state;
+        contextData = { ...contextData, ...data.ai_memory_state };
       }
       // Fetch chapters
       const { data: chaptersData } = await supabase.from('chapters').select('content').eq('story_id', storyId).order('chapter_number', { ascending: true });
@@ -46,7 +54,9 @@ export async function* runChapterLoopGenerator(userChoice: string, storyId?: str
 
   const architectPrompt = (configData.architect.prompt || '')
     .replace(/{{NEXT_CHAPTER}}/g, nextChapterNumber.toString())
-    .replace('{{STORY_CONTEXT}}', contextData.story_context || '')
+    .replace(/{{GENRE}}/g, contextData.genre || 'Fiksi')
+    .replace(/{{THEME}}/g, contextData.theme || 'Universal')
+    .replace(/{{LORE_CONTEXT}}/g, contextData.story_context || '')
     .replace('{{CHARACTERS}}', JSON.stringify(contextData.characters || []))
     .replace('{{EVENTS}}', JSON.stringify(contextData.events || []))
     .replace('{{USER_CHOICE}}', userChoice);
@@ -59,8 +69,10 @@ export async function* runChapterLoopGenerator(userChoice: string, storyId?: str
   
   const wordsmithPrompt = (configData.wordsmith.prompt || '')
     .replace(/{{NEXT_CHAPTER}}/g, nextChapterNumber.toString())
+    .replace(/{{GENRE}}/g, contextData.genre || 'Fiksi')
+    .replace(/{{TONE}}/g, contextData.tone || 'Imersif')
+    .replace(/{{LORE_CONTEXT}}/g, contextData.story_context || '')
     .replace('{{OUTLINE}}', outline)
-    .replace('{{STORY_CONTEXT}}', contextData.story_context || '')
     .replace('{{CHARACTERS}}', JSON.stringify(contextData.characters || []))
     .replace('{{EVENTS}}', JSON.stringify(contextData.events || []));
 
@@ -71,11 +83,8 @@ export async function* runChapterLoopGenerator(userChoice: string, storyId?: str
   yield { type: 'log', message: 'Critic sedang mengevaluasi draf...' };
   
   const criticPrompt = (configData.critic.prompt || '')
-    .replace('{{LORE}}', JSON.stringify({
-      story_context: contextData.story_context,
-      characters: contextData.characters,
-      events: contextData.events
-    }))
+    .replace(/{{GENRE}}/g, contextData.genre || 'Fiksi')
+    .replace(/{{LORE_CONTEXT}}/g, contextData.story_context || '')
     .replace('{{OUTLINE}}', outline)
     .replace('{{DRAFT}}', draft);
 
@@ -94,6 +103,8 @@ export async function* runChapterLoopGenerator(userChoice: string, storyId?: str
     yield { type: 'log', message: 'Draf ditolak. Wordsmith sedang merevisi draf berdasarkan kritik...' };
     
     const revisionPrompt = (configData.wordsmith.revision_prompt || '')
+      .replace(/{{GENRE}}/g, contextData.genre || 'Fiksi')
+      .replace(/{{TONE}}/g, contextData.tone || 'Imersif')
       .replace('{{CRITIQUE}}', critique)
       .replace('{{DRAFT}}', draft);
 
@@ -123,11 +134,23 @@ export async function* runChapterLoopGenerator(userChoice: string, storyId?: str
   }
 
   // Update memory
-  if (loreData.new_characters) {
+  if (loreData.new_characters && Array.isArray(loreData.new_characters)) {
     contextData.characters.push(...loreData.new_characters);
   }
-  if (loreData.new_events) {
+  if (loreData.new_events && Array.isArray(loreData.new_events)) {
     contextData.events.push(...loreData.new_events);
+  }
+  if (loreData.state_changes && Array.isArray(loreData.state_changes)) {
+    loreData.state_changes.forEach((s: any) => {
+      if (s.entity && s.current_state) {
+        contextData.events.push(`Perubahan Status [${s.entity}]: ${s.current_state}`);
+      }
+    });
+  }
+  if (loreData.unresolved_mysteries && Array.isArray(loreData.unresolved_mysteries)) {
+    loreData.unresolved_mysteries.forEach((m: string) => {
+      contextData.events.push(`Misteri Baru: ${m}`);
+    });
   }
   
   if (storyId && hasSupabase) {

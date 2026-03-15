@@ -22,6 +22,9 @@ export async function POST(request: Request) {
     // Initial memory state for a new story
     const initialMemoryState = {
       story_context: "",
+      genre: "Sci-Fi",
+      tone: "Dark",
+      theme: "Survival",
       characters: [],
       events: [],
       chapters: []

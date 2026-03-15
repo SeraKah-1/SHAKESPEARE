@@ -16,7 +16,10 @@ type Config = {
 };
 type Memory = {
   story_context: string;
-  characters: {name: string, description: string}[];
+  genre: string;
+  tone: string;
+  theme: string;
+  characters: {name: string, description: string, affiliation?: string}[];
   events: string[];
   chapters: string[];
 };
@@ -35,7 +38,15 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   const [isSavingStory, setIsSavingStory] = useState(false);
 
   // Reader & Memory State
-  const [memory, setMemory] = useState<Memory>({ story_context: '', characters: [], events: [], chapters: [] });
+  const [memory, setMemory] = useState<Memory>({ 
+    story_context: '', 
+    genre: 'Sci-Fi', 
+    tone: 'Dark', 
+    theme: 'Survival',
+    characters: [], 
+    events: [], 
+    chapters: [] 
+  });
   const [choices, setChoices] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [customInput, setCustomInput] = useState('');
@@ -201,6 +212,12 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
     try {
       if (editingLore === 'context') {
         newMemory.story_context = loreEditContent;
+      } else if (editingLore === 'genre') {
+        newMemory.genre = loreEditContent;
+      } else if (editingLore === 'tone') {
+        newMemory.tone = loreEditContent;
+      } else if (editingLore === 'theme') {
+        newMemory.theme = loreEditContent;
       } else if (editingLore === 'characters') {
         newMemory.characters = JSON.parse(loreEditContent);
       } else if (editingLore === 'events') {
@@ -394,6 +411,57 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+          {/* Genre, Tone, Theme */}
+          <div className="grid grid-cols-1 gap-4 mb-6">
+            <div className="bg-zinc-950/30 border border-zinc-800/50 rounded-lg p-3 space-y-3">
+              {/* Genre */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Genre</span>
+                  <button onClick={() => { setEditingLore('genre' as any); setLoreEditContent(memory.genre || 'Sci-Fi'); }} className="text-zinc-600 hover:text-emerald-400"><Edit2 size={10} /></button>
+                </div>
+                {editingLore === 'genre' ? (
+                  <div className="flex gap-2">
+                    <input value={loreEditContent} onChange={e => setLoreEditContent(e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500" />
+                    <button onClick={handleSaveLore} className="text-emerald-500"><Check size={14}/></button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-zinc-300 font-medium">{memory.genre || 'Sci-Fi'}</div>
+                )}
+              </div>
+              {/* Tone */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Tone</span>
+                  <button onClick={() => { setEditingLore('tone' as any); setLoreEditContent(memory.tone || 'Dark'); }} className="text-zinc-600 hover:text-emerald-400"><Edit2 size={10} /></button>
+                </div>
+                {editingLore === 'tone' ? (
+                  <div className="flex gap-2">
+                    <input value={loreEditContent} onChange={e => setLoreEditContent(e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500" />
+                    <button onClick={handleSaveLore} className="text-emerald-500"><Check size={14}/></button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-zinc-300 font-medium">{memory.tone || 'Dark'}</div>
+                )}
+              </div>
+              {/* Theme */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Theme</span>
+                  <button onClick={() => { setEditingLore('theme' as any); setLoreEditContent(memory.theme || 'Survival'); }} className="text-zinc-600 hover:text-emerald-400"><Edit2 size={10} /></button>
+                </div>
+                {editingLore === 'theme' ? (
+                  <div className="flex gap-2">
+                    <input value={loreEditContent} onChange={e => setLoreEditContent(e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500" />
+                    <button onClick={handleSaveLore} className="text-emerald-500"><Check size={14}/></button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-zinc-300 font-medium">{memory.theme || 'Survival'}</div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Story Context */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
