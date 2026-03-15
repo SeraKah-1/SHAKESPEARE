@@ -117,11 +117,15 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
 
   // Auto-scroll
   useEffect(() => {
-    if (endOfStoryRef.current && !editingChapter) endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (endOfStoryRef.current && !editingChapter) {
+      endOfStoryRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }, [memory.chapters, isGenerating, editingChapter]);
 
   useEffect(() => {
-    if (logsEndRef.current) logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }, [logs]);
 
   const addLog = (message: string, type: string = 'info') => {
